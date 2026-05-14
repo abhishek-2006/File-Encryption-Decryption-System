@@ -1,4 +1,4 @@
-const API_BASE_URL = window.location.origin;
+const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin);
 
 export const processFile = async (file, password, mode) => {
   const formData = new FormData();
@@ -11,8 +11,16 @@ export const processFile = async (file, password, mode) => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || `Server error: ${response.status}`);
+    let errorMsg = `Server error: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData && errorData.detail) {
+        errorMsg = errorData.detail;
+      }
+    } catch (e) {
+      // Ignored if response is not valid JSON
+    }
+    throw new Error(errorMsg);
   }
 
   return await response.blob();
